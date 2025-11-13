@@ -4,16 +4,18 @@
 #include <pigpio.h>
 #include <thread>
 #include <chrono>
+#include <string>
 
 /**
  * @class GPIOControl
  * @brief GPIO 硬件控制类，用于控制电机和舵机
  * 
  * 功能：
- * - 初始化 pigpio 库和 GPIO 引脚
+ * - 初始化和管理 pigpiod 守护进程
+ * - 初始化 GPIO 引脚和 PWM
  * - 控制直流电机速度（通过 PWM）
  * - 控制舵机角度（通过 PWM）
- * - 清理和释放资源
+ * - 清理和释放资源，关闭 pigpiod
  */
 class GPIOControl {
 private:
@@ -23,10 +25,20 @@ private:
     
     // 电机最后设置的 PWM 值（用于平滑加速）
     int last_dian = 10000;
+    
+    // pigpiod 守护进程管理
+    bool pigpiod_started = false;  // 标记是否启动了 pigpiod
+    pid_t pigpiod_pid = -1;        // pigpiod 进程 ID
 
 public:
     /**
      * @brief 初始化 GPIO 和 PWM
+     * 
+     * 步骤：
+     * 1. 检查 pigpiod 守护进程是否运行
+     * 2. 如果未运行则启动 pigpiod
+     * 3. 初始化 pigpio 库连接
+     * 4. 配置电机和舵机 PWM
      * 
      * 配置：
      * - 电机：PWM 频率 200Hz，范围 40000
@@ -59,9 +71,33 @@ public:
     void setServo(double angle);
     
     /**
-     * @brief 析构函数，清理 GPIO 资源
+     * @brief 安全关闭 GPIO 和 pigpiod
+     * 
+     * 步骤：
+     * 1. 设置电机和舵机为安全位置
+     * 2. 断开 pigpio 库连接
+     * 3. 关闭 pigpiod 守护进程（如果是本程序启动的）
      */
     ~GPIOControl();
+
+private:
+    /**
+     * @brief 启动 pigpiod 守护进程
+     * @return 成功返回 true，失败返回 false
+     */
+    bool startPigpiod();
+    
+    /**
+     * @brief 检查 pigpiod 守护进程是否正在运行
+     * @return 运行返回 true，未运行返回 false
+     */
+    bool isPigpiodRunning();
+    
+    /**
+     * @brief 停止 pigpiod 守护进程
+     * @return 成功返回 true，失败返回 false
+     */
+    bool stopPigpiod();
 };
 
 #endif // GPIO_CONTROL_H
