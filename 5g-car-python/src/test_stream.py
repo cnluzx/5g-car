@@ -35,22 +35,40 @@ BOUNDARY_RIGHT = IMAGE_WIDTH - 2  # 318
 CONTINUOUS_WHITE = 2  # 连续白像素数
 MID_SAMPLE_OFFSET = 5  # 中下部采样偏移
 
+
+if_sound = False 
+
 class Broadcast:
     def __init__(self):
+
+        ####初始化pygame 
+        ####其中有全局变量控制 if_sound是否播放 
+        ####类成员变量 audio_initialized控制是否初始化成功 
+        #### 如果initialized成功，则可以播放音频 
+        ####整体调用流程:
+
+        ###sound = Broadcast() 
+        ###sound._play_sound(sound,speak )  即可播放音频 
+
         try:
             pygame.init()
             pygame.mixer.init()
             self.audio_initialized = True
             print("[Broadcast] pygame.mixer 初始化成功")
+
         except Exception as e:
+            ###如果初始化失败
             print(f"[Broadcast] pygame.mixer 初始化失败: {e}")
             self.audio_initialized = False
 
     def _play_sound(self, place, name):
+
+
         if not self.audio_initialized:
             print("[Broadcast] 音频未初始化，跳过播放")
             return
-        sound_path = f"/home/pi/Desktop/sound/{place}/{name}.mp3"
+        sound_path = f"/home/pi/5g-car-python/{place}/{name}.mp3"
+
         print(f"[Broadcast] 尝试播放: {sound_path}")
         if not os.path.exists(sound_path):
             print(f"[Broadcast] 错误: 文件不存在 - {sound_path}")
@@ -61,30 +79,13 @@ class Broadcast:
             print(f"[Broadcast] 开始播放 {name}")
             while pygame.mixer.music.get_busy():
                 pygame.time.Clock().tick(20)
-            print(f"[Broadcast] 播放完成 {name}")
+            print(f"[Broadcast] 播放完成 {name}")  ###直至播放完毕
+            if_sound = True 
+
         except Exception as e:
             print(f"[Broadcast] 播放声音失败: {e}")
+            
 
-    def threading_sound(self):
-        print("[Broadcast] 语音播报线程已启动...")
-        while running_flag.is_set():
-            try:
-                place, name = audio_queue.get(timeout=0.1)
-                self._play_sound(place, name)
-                audio_queue.task_done()
-            except queue.Empty:
-                continue
-        print("[Broadcast] 语音播报线程已停止")
-
-    def update_sound(self, place, name):
-        if not self.audio_initialized:
-            print("[Broadcast] 音频未初始化，跳过更新")
-            return
-        try:
-            audio_queue.put((place, name), timeout=0.05)
-            print(f"[Broadcast] update_sound: {place}/{name} 已加入队列")
-        except queue.Full:
-            print(f"[Broadcast] 警告：音频队列已满，丢弃 {place}/{name}")
 
 
 class Baffle:

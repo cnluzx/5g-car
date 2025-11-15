@@ -1,0 +1,7 @@
+opencv-python
+numpy
+pigpio
+ultralytics
+torch
+# 可选
+# nlohmann/json 没必要（C++ 的），Python 使用 json
